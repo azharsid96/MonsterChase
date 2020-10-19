@@ -1,0 +1,95 @@
+{
+    "GameObjects": [
+      {
+        "Name": "Player",
+        "Position": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 0.0
+        },
+        "Rotation": 0.0,
+        "Renderer": "data/GoodGuy.dds",
+        "Physics": {
+          "mass": 1.0,
+          "drag": 0.3,
+          "ExternalForce": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          }
+        },
+        "Collision": "true"
+      },
+      {
+        "Name": "Box",
+        "Position": {
+          "x": 0.0,
+          "y": -100.0,
+          "z": 0.0
+        },
+        "Rotation": 0.0,
+        "Renderer": "data/Box.dds",
+        "Physics": {
+          "mass": 1.0,
+          "drag": 0.1,
+          "ExternalForce": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          }
+        },
+        "Collision": "true"
+      },
+      {
+        "Name": "Goal",
+        "Position": {
+          "x": 0.0,
+          "y": -400.0,
+          "z": 0.0
+        },
+        "Rotation": 0.0,
+        "Renderer": "data/Goal.dds",
+        "Collision": "false"
+      },
+      {
+        "Name": "Monster 1",
+        "Position": {
+          "x": 400.0,
+          "y": 0.0,
+          "z": 0.0
+        },
+        "Rotation": 0.0,
+        "Renderer": "data/BadGuy.dds",
+        "Physics": {
+          "mass": 2.0,
+          "drag": 0.1,
+          "ExternalForce": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          }
+        },
+        "Collision": "true"
+      },
+      {
+        "Name": "Monster 2",
+        "Position": {
+          "x": -400.0,
+          "y": 0.0,
+          "z": 0.0
+        },
+        "Rotation": 0.0,
+        "Renderer": "data/BadGuy.dds",
+        "Physics": {
+          "mass": 2.0,
+          "drag": 0.1,
+          "ExternalForce": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          }
+        },
+        "Collision": "true"
+      }
+    ]
+  }
