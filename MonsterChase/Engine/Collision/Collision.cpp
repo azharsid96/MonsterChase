@@ -1,23 +1,30 @@
 #include "Collision.h"
 
-Engine::Mutex mutexCollisionLock;
+Engine::Mutex mutexCollisionLock;	// using a mutex to deal with multiple threads running at the same time
 
 Collision * Collision::c_Instance = new Collision();
 
-bool Collision::AddGameObjectToCollision(SmartPtrs<GameObject> i_game_object) {
+/**
+* Stores new gameobjects that are affected by collision to a vector
+*
+* @param i_game_object smart pointer referencing to a game object in the world
+*/
+void Collision::AddGameObjectToCollision(SmartPtrs<GameObject> i_game_object) {
 
-	assert(i_game_object);
-
-	Engine::ScopeLock scopeLock(mutexCollisionLock);
+	Engine::ScopeLock scopeLock(mutexCollisionLock);        // locking the mutex using a scoped lock so it can automatically be unlocked when tasks on this thread have completed
 
 	if (i_game_object)
 	{
+        // Converts the smart pointer pointing to game object to a weak pointer pointing to that game object
+        // and adds it to the collision affected game objects vector 
 		Collision::c_Instance->newObjsToCollide.emplace_back(WeakPtrs<GameObject>(i_game_object));
 	}
-
-	return true;
 }
 
+/**
+* Copies over any newly added game objects that are affected by collision to a vector storing 
+* all game objects affected by collision
+*/
 void Collision::MoveObjects()
 {
 	Engine::ScopeLock scopeLock(mutexCollisionLock);
@@ -30,6 +37,10 @@ void Collision::MoveObjects()
 	c_Instance->newObjsToCollide.clear();
 }
 
+/**
+* Runs the game loop every frame checking for and handling collisions between objects
+* @param i_dt Delta Time
+*/
 void Collision::Run(float i_dt) {
 
 	MoveObjects();
@@ -50,19 +61,10 @@ void Collision::Run(float i_dt) {
 				{
 					Engine::Math::Vector4 mCollisionNormal = Engine::Math::Vector4::Zero;
 					float mCollisionTime = 0.0;
-
-					if (Helpers::IsNaN(c_Instance->objsToCollide[i].obj.Acquire()->GetVelocity().x()))
-					{
-						bool t = true;
-					}
-
-					if (Helpers::IsNaN(c_Instance->objsToCollide[j].obj.Acquire()->GetVelocity().x()))
-					{
-						bool t = true;
-					}
 					
-					//check for collision of every collidable obj with every other collidable obj (w/o swapped repeats)
+					//check for collision of every collidable obj with every other collidable obj (without swapped repeats)
 					bool result = CheckForCollision(c_Instance->objsToCollide[i], c_Instance->objsToCollide[j], i_dt, mCollisionNormal, mCollisionTime);
+                    // collision has been found between two collidables
 					if (result)
 					{
 						std::string obj_A = c_Instance->objsToCollide[i].obj.Acquire()->GetName();
@@ -75,6 +77,7 @@ void Collision::Run(float i_dt) {
 							breakOut = true;
 							break;
 						}
+                        // If the player collides with any of the monsters end the game
 						if ((obj_A == "Player" || obj_A == "Monster 1") && (obj_B == "Player" || obj_B == "Monster 1"))
 						{
 							c_Instance->exitOnCollide = true;
@@ -82,18 +85,18 @@ void Collision::Run(float i_dt) {
 							break;
 						}
 
+                        // Store all the collision information from this collision
 						if (mCollisionTime < EarliestCollision.collisionTime)
 						{
 							EarliestCollision.collisionTime = mCollisionTime;
 							EarliestCollision.collisionNormal = mCollisionNormal;
 							EarliestCollision.objA = c_Instance->objsToCollide[i];
 							EarliestCollision.objB = c_Instance->objsToCollide[j];
-
-
 						}
-						// find out earliest collision amongst objects and store it in a struct and then pass the struct values into collision response
+						// deals with the collision response
 						CollisionResponse(EarliestCollision.collisionNormal, EarliestCollision.objA, EarliestCollision.objB, EarliestCollision.collisionTime);
 
+                        // Debugging info to print collision check results
 						const size_t	lenBuffer = 65;
 						char			Buffer[lenBuffer];
 
@@ -110,7 +113,16 @@ void Collision::Run(float i_dt) {
 	}
 }
 
-
+/**
+* Checks if two collidable objects have collided or not
+* @param i_A Reference to first collidable obj
+* @param i_B Reference to second collidable obj
+* @param i_dt Delta Time
+* @param i_collisionNormal Reference to the collision normal vector between the two collidables
+* @param i_collisionTime Reference to the time when collision occured between the two collidables
+* @return TRUE - Collision has occured.
+*         FALSE - No collision has occured.
+*/
 bool Collision::CheckForCollision(Collidable i_A, Collidable& i_B, float i_dt, Engine::Math::Vector4 & i_collisionNormal, float & i_collisionTime)
 {
 	using namespace Engine::Math;
@@ -368,11 +380,6 @@ bool Collision::CheckForCollision(Collidable i_A, Collidable& i_B, float i_dt, E
 	
 	//// DETERMINE IF THERE WAS ANY COLLISION BETWEEN A AND B BASED ON VELOCITY //////
 
-	//float t_Open[] = { t_Open_Bx, t_Open_By, t_Open_Ax, t_Open_Ay };
-	//float t_Close[] = { t_Close_Bx, t_Close_By, t_Close_Ax, t_Close_Ay };
-
-	
-
 	//Edge case: t-open < 0
 	for (int i = 0; i < t_Open.size(); i++)
 	{
@@ -471,10 +478,18 @@ bool Collision::CheckForCollision(Collidable i_A, Collidable& i_B, float i_dt, E
 	return true;
 }
 
+/**
+* Handles what happens when the two objects collide
+* @param i_CollisionNormal The collision normal vector between the two collidables
+* @param i_A Reference to first collidable obj
+* @param i_B Reference to second collidable obj
+* @param i_CollisionTime Reference to the time when collision occured between the two collidables
+*/
 void Collision::CollisionResponse(Engine::Math::Vector4 i_CollisionNormal, Collidable & i_A, Collidable & i_B, float i_CollisionTime)
 {
 	using namespace Engine::Math;
 
+    // velocities of the two collidables before collision response
 	Vector3 oldVelocity_A = i_A.obj.Acquire()->GetVelocity();
 	Vector3 oldVelocity_B = i_B.obj.Acquire()->GetVelocity();
 
@@ -505,6 +520,7 @@ void Collision::CollisionResponse(Engine::Math::Vector4 i_CollisionNormal, Colli
 		Vector4 relfectVelocity_A_v4 = left_side_eq - right_side_eq;
 		Vector3 finalReflectVelocity_A = Vector3(relfectVelocity_A_v4.x(), relfectVelocity_A_v4.y(), relfectVelocity_A_v4.z());
 
+        // new velocity for object A after collision response
 		i_A.obj.Acquire()->SetVelocity(finalReflectVelocity_A);
 	}
 
@@ -517,7 +533,7 @@ void Collision::CollisionResponse(Engine::Math::Vector4 i_CollisionNormal, Colli
 		Vector4 relfectVelocity_B_v4 = left_side_eq - right_side_eq;
 		Vector3 finalReflectVelocity_B = Vector3(relfectVelocity_B_v4.x(), relfectVelocity_B_v4.y(), relfectVelocity_B_v4.z());
 
+        // new velocity for object B after collision response
 		i_B.obj.Acquire()->SetVelocity(finalReflectVelocity_B);
 	}
 }
-
