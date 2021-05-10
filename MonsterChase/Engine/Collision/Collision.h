@@ -39,7 +39,7 @@ struct CollisionPair
 class Collision
 {
 public:
-	static bool AddGameObjectToCollision(SmartPtrs<GameObject> i_game_object);
+	static void AddGameObjectToCollision(SmartPtrs<GameObject> i_game_object);
 
 	static void MoveObjects();
 	
